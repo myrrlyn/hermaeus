@@ -67,6 +67,48 @@ module Hermaeus
 			end
 			.reject { |item| item.nil? }
 		end
+
+		# Public: Collects posts from reddit.
+		#
+		# fullnames - A String Array of reddit fullnames ("tNUM_ID", following
+		# reddit documentation) to query.
+		#
+		# Yields a sequence of Hashes, each describing a reddit post.
+		#
+		# Returns an Array of the response bodies from the reddit call(s).
+		#
+		# Examples
+		#
+		# get_posts get_fullnames get_global_listing do |post|
+		#   puts post[:selftext] # Prints the Markdown source of each post
+		# end
+		# => returns an array of hashes, each of which includes an array of posts.
+		def get_posts fullnames
+			ret = []
+			# reddit has finite limits on acceptable query sizes. Split the list into
+			# manageable portions
+			fullnames.fracture.each do |chunk|
+				# Assemble the list of reddit objects being queried
+				query = chunk.join(",")
+				# Ask reddit to procure our items
+				response = @client.get("/by_id/#{query}.json")
+				if response.success?
+					payload = response.body
+					# The payload should be a Listing even for a single-item query; the
+					# :children array will just have one element.
+					if payload[:kind] == "Listing"
+						payload[:data][:children].each do |item|
+							yield item[:data]
+						end
+					# else
+					end
+					ret << payload
+				end
+				# Keep the rate limiter happy
+				sleep 1
+			end
+			ret
+		end
 	end
 end
 
@@ -79,7 +121,7 @@ class Array
 	# Returns an Array of Arrays. Each element of the returned array is a section
 	# of the original array.
 	#
-	# Examples:
+	# Examples
 	#
 	# %w[a b c d e f g h i j k l m n o p q r s t u v w x y z].fracture 5
 	# => [
