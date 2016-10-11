@@ -53,7 +53,7 @@ module Hermaeus
 			regex = opts[:regex] || %r(/r/.+/(comments/)?(?<id>[0-9a-z]+)/.+)
 			data.map do |item|
 				m = item.match regex
-				"/by_id/t3_#{m[:id]}" if m
+				"t3_#{m[:id]}" if m
 			end
 			.reject { |item| item.nil? }
 		end
