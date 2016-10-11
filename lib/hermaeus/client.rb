@@ -24,28 +24,17 @@ module Hermaeus
 
 		# Public: Scrapes the Compilation full index
 		#
-		# Optional parameters:
-		#
-		# query: A CSS selector string that will be used to target the HTML nodes
-		# desired.
-		#
-		# Returns a String Array containing the links pointed to by the Compendium
-		# index page.
+		# Wraps Client#scrape; see it for documentation.
 		def get_global_listing **opts
-			# This is a magic string that targets the index format /r/teslore uses to
-			# enumerate their Compendium.
-			query = opts[:query] || "td:first-child a"
-			# The returned HTML content is escaped, so it cannot be parsed as HTML.
-			fetch = @client.get("/r/teslore/wiki/compilation").body[:data]
-			# Rebind fetch to be unescaped HTML that Nokogiri can actually parse.
-			fetch = @html_filter.decode(fetch[:content_html])
-			# Feed the HTML text to Nokogiri for parsing.
-			doc = Nokogiri::HTML(fetch)
-			# CSS select all the links referenced by the index page. The CSS selector
-			# method returns Nokogiri objects, which are mapped down to the href data.
-			doc.css(query).map do |item|
-				item.attributes["href"].value
-			end
+			scrape "/r/teslore/wiki/compilation", opts
+		end
+
+		# Public: Scrapes a Weekly Community Thread patch index.
+		#
+		# Wraps Client#scrape; see it for documentation.
+		def get_weekly_listing id, **opts
+			id = "/by_id/t3_#{id}" unless id.match /^t3_/
+			scrape id, opts
 		end
 
 		# Public: Transforms a list of raw reddit links ("/r/SUB/comments/ID/NAME")
@@ -63,7 +52,7 @@ module Hermaeus
 			regex = opts[:regex] || %r(/r/.+/(comments/)?(?<id>[0-9a-z]+)/.+)
 			data.map do |item|
 				m = item.match regex
-				"t3_#{m[:id]}" if m
+				"/by_id/t3_#{m[:id]}" if m
 			end
 			.reject { |item| item.nil? }
 		end
@@ -108,6 +97,67 @@ module Hermaeus
 				sleep 1
 			end
 			ret
+		end
+
+		private
+
+		# Internal: Governs the actual functionality of the index scrapers.
+		#
+		# path - The reddit API or path being queried. It can be a post ID/fullname
+		# or a full URI.
+		#
+		# Optional parameters:
+		#
+		# css: The CSS selector string used to get the links referenced on the page.
+		#
+		# Returns an array of all the referenced links. These links will need to be
+		# broken down into reddit fullnames before Hermaeus can download them.
+		def scrape path, **opts
+			# This is a magic string that targets the index format /r/teslore uses to
+			# enumerate their Compendium, in the wiki page and weekly patch posts.
+			query = opts[:css] || "td:first-child a"
+			# Reddit will respond with an HTML dump, if we are querying a wiki page,
+			# or a wrapped HTML dump, if we are querying a post.
+			fetch = @client.get(path).body
+			# Set fetch to be an array of hashes which have the desired text as a
+			# direct child.
+			if fetch[:kind] == "wikipage"
+				fetch = [fetch[:data]]
+			elsif fetch[:kind] == "Listing"
+				fetch = fetch[:data][:children].map { |c| c[:data] }
+			end
+			# reddit will put the text data in :content_html if we queried a wikipage,
+			# or :selftext_html if we queried a post. The two keys are mutually
+			# exclusive, so this simply looks for both and remaps fetch items to point
+			# to the actual data.
+			[:content_html, :selftext_html].each do |k|
+				fetch.map! do |item|
+					item[k] if item.has_key? k
+				end
+			end
+			# Ruby doesn't like having comments between each successive map block.
+			# This sequence performs the following transformations on each entry in
+			# the fetched list.
+			# 1. Unescape the HTML text.
+			# 2. Process the HTML text into data structures.
+			# 3. Run CSS queries on the data structures to find the links sought.
+			# 4. Unwrap the link elements to get the URI at which they point.
+			# 5. In the event that multiple pages were queried to get data, the array
+			# that each of those queries returns is flattened so that this method only
+			# returns one single array of link URIs.
+			fetch.map do |item|
+				@html_filter.decode(item)
+			end
+			.map do |item|
+				Nokogiri::HTML(item)
+			end
+			.map do |item|
+				item.css(query)
+			end
+			.map do |item|
+				item.attributes["href"].value
+			end
+			.flatten
 		end
 	end
 end
