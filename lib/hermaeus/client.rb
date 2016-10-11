@@ -47,5 +47,25 @@ module Hermaeus
 				item.attributes["href"].value
 			end
 		end
+
+		# Public: Transforms a list of raw reddit links ("/r/SUB/comments/ID/NAME")
+		# into their reddit fullname ("t3_ID").
+		#
+		# data - A String Array such as that returned by get_global_listing.
+		#
+		# Optional parameters:
+		#
+		# regex: A Regular Expression used to match the reddit ID out of a link.
+		#
+		# Returns a String Array containing the reddit fullnames harvested from the
+		# input list. Input elements that do not match are stripped.
+		def get_fullnames data, **opts
+			regex = opts[:regex] || %r(/r/.+/(comments/)?(?<id>[0-9a-z]+)/.+)
+			data.map do |item|
+				m = item.match regex
+				"t3_#{m[:id]}" if m
+			end
+			.reject { |item| item.nil? }
+		end
 	end
 end
