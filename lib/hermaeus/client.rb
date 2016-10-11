@@ -25,17 +25,17 @@ module Hermaeus
 
 		# Public: Scrapes the Compilation full index.
 		#
-		# Wraps Client#scrape; see it for documentation.
+		# Wraps Client#scrape_index; see it for documentation.
 		def get_global_listing **opts
-			scrape "/r/teslore/wiki/compilation", opts
+			scrape_index "/r/teslore/wiki/compilation", opts
 		end
 
 		# Public: Scrapes a Weekly Community Thread patch index.
 		#
-		# Wraps Client#scrape; see it for documentation.
+		# Wraps Client#scrape_index; see it for documentation.
 		def get_weekly_listing id, **opts
 			id = "/by_id/t3_#{id}" unless id.match /^t3_/
-			scrape id, opts
+			scrape_index id, opts
 		end
 
 		# Public: Transforms a list of raw reddit links ("/r/SUB/comments/ID/NAME")
@@ -113,7 +113,7 @@ module Hermaeus
 		#
 		# Returns an array of all the referenced links. These links will need to be
 		# broken down into reddit fullnames before Hermaeus can download them.
-		def scrape path, **opts
+		def scrape_index path, **opts
 			# This is a magic string that targets the index format /r/teslore uses to
 			# enumerate their Compendium, in the wiki page and weekly patch posts.
 			query = opts[:css] || "td:first-child a"
