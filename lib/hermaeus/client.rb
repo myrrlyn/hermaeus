@@ -7,10 +7,11 @@
 require "hermaeus/config"
 
 module Hermaeus
-	# Public: Wraps a reddit client for access to reddit's API
+	# Public: Wraps a reddit client for access to reddit's API, and provides
+	# methods for downloading posts from reddit.
 	class Client
 		USER_AGENT = "Redd/Ruby:Hermaeus:#{Hermaeus::VERSION} (by /u/myrrlyn)"
-		# Public: Connects the Hermaeus::Client to reddit
+		# Public: Connects the Hermaeus::Client to reddit.
 		#
 		# info - A Hash with Symbol keys containing reddit connection information.
 		# It should be the `[:client]` section of the Hash returned by
@@ -22,7 +23,7 @@ module Hermaeus
 			@html_filter = HTMLEntities.new
 		end
 
-		# Public: Scrapes the Compilation full index
+		# Public: Scrapes the Compilation full index.
 		#
 		# Wraps Client#scrape; see it for documentation.
 		def get_global_listing **opts
