@@ -1,3 +1,4 @@
+require "hermaeus/client"
 require "hermaeus/config"
 require "hermaeus/error"
 require "hermaeus/version"
@@ -24,5 +25,10 @@ You must put your reddit credentials in #{File.join Config::DIR,"config.toml"} \
 for Hermaeus to function.
 			EOS
 		end
+	end
+
+	# Public: Connects Hermaeus to reddit.
+	def self.connect
+		@client = Client.new @cfg[:client]
 	end
 end
