@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require "hermaeus"
+
+if ARGV.length == 0 || ARGV[0].match(/^-{0,2}help$/) || ARGV[0] == "-h"
+	Hermaeus.help
+elsif ARGV[0].match(/^-{0,2}version$/) || ARGV[0] == "-v"
+	puts Hermaeus::VERSION
+elsif ARGV[0] == "seek"
+	ARGV.shift
+	if ARGV[0].nil?
+		usage
+	else
+		Hermaeus.init
+		Hermaeus.connect
+		Hermaeus.seek ARGV.shift, ARGV do |post|
+			puts post[:title]
+		end
+	end
+else
+	Hermaeus.help
+end

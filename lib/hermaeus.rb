@@ -4,6 +4,8 @@ require "hermaeus/error"
 require "hermaeus/version"
 
 # Public: Root module for Hermaeus.
+#
+# Hermaeus’ top-level methods provide the interface used by `mora`.
 module Hermaeus
 	# Public: Initializes Hermaeus for use.
 	#
@@ -30,5 +32,29 @@ for Hermaeus to function.
 	# Public: Connects Hermaeus to reddit.
 	def self.connect
 		@client = Client.new @cfg[:client]
+	end
+
+	# Public: Downloads Apocrypha posts.
+	#
+	# type - "index" or "com"
+	# ids - A list of thread IDs to access and scrape, if type is "com"
+	def self.seek type, ids, &block
+		if type == "index"
+			list = @client.get_global_listing
+		elsif type == "com"
+			list = @client.get_weekly_listing ids
+		end
+		ids = @client.get_fullnames list
+		posts = @client.get_posts ids, &block
+	end
+
+	# Public: Print usage information for `mora`.
+	#
+	# `mora` may not know where Hermaeus is installed, so Hermaeus has to load the
+	# help file for it.
+	def self.help
+		File.open File.join(File.dirname(__FILE__), "..", "data", "usage.txt") do |f|
+			puts f.read
+		end
 	end
 end

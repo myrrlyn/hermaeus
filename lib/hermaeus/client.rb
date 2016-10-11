@@ -32,10 +32,21 @@ module Hermaeus
 
 		# Public: Scrapes a Weekly Community Thread patch index.
 		#
+		# ids - A String Array of reddit post IDs for Weekly Community Threads.
+		#
+		# Examples:
+		#
+		# get_weekly_listing "56j7pq" # Targets one Community Thread
+		# get_weekly_listing "56j7pq", "55erkr" # Targets two Community Threads
+		# get_weekly_listing "55erkr", css: "td:last-child a" # Custom CSS selector
+		#
 		# Wraps Client#scrape_index; see it for documentation.
-		def get_weekly_listing id, **opts
-			id = "/by_id/t3_#{id}" unless id.match /^t3_/
-			scrape_index id, opts
+		def get_weekly_listing ids, **opts
+			ids.map! do |id|
+			 "t3_#{id}" unless id.match /^t3_/
+			end
+			query = "/by_id/#{ids.join(",")}"
+			scrape_index query, opts
 		end
 
 		# Public: Transforms a list of raw reddit links ("/r/SUB/comments/ID/NAME")
@@ -73,7 +84,7 @@ module Hermaeus
 		#   puts post[:selftext] # Prints the Markdown source of each post
 		# end
 		# => returns an array of hashes, each of which includes an array of posts.
-		def get_posts fullnames
+		def get_posts fullnames, &block
 			ret = []
 			# reddit has finite limits on acceptable query sizes. Split the list into
 			# manageable portions
@@ -133,7 +144,11 @@ module Hermaeus
 			# to the actual data.
 			[:content_html, :selftext_html].each do |k|
 				fetch.map! do |item|
-					item[k] if item.has_key? k
+					if item.respond_to?(:has_key?) && item.has_key?(k)
+						item[k]
+					else
+						item
+					end
 				end
 			end
 			# Ruby doesn't like having comments between each successive map block.
@@ -153,10 +168,9 @@ module Hermaeus
 				Nokogiri::HTML(item)
 			end
 			.map do |item|
-				item.css(query)
-			end
-			.map do |item|
-				item.attributes["href"].value
+				item.css(query).map do |item|
+					item.attributes["href"].value
+				end
 			end
 			.flatten
 		end
