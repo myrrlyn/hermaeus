@@ -2,6 +2,12 @@
 
 ## v1
 
+### v1.0.1
+
+Deployment to a separate machine brought some hidden bugs to light. Fixed a
+syntax error in the initialization routines and added documentation about fresh
+installations to the README.
+
 ### v1.0.0
 
 Added a storage backend (`Apocryphon` and `Archivist` classes) capable of
