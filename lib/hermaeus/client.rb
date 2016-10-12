@@ -5,6 +5,7 @@
 ].each(&method(:require))
 
 require "hermaeus/config"
+require "hermaeus/version"
 
 module Hermaeus
 	# Public: Wraps a reddit client for access to reddit's API, and provides
@@ -190,7 +191,7 @@ class Array
 	#
 	# %w[a b c d e f g h i j k l m n o p q r s t u v w x y z].fracture 5
 	# => [
-	#	  ["a", "b", "c", "d", "e"],
+	#   ["a", "b", "c", "d", "e"],
 	#   ["f", "g", "h", "i", "j"],
 	#   ["k", "l", "m", "n", "o"],
 	#   ["p", "q", "r", "s", "t"],

@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-require "bundler/setup"
 require "hermaeus"
 
 if ARGV.length == 0 || ARGV[0].match(/^-{0,2}help$/) || ARGV[0] == "-h"
@@ -18,8 +17,11 @@ elsif ARGV[0] == "seek"
 		if type == "com"
 			raise ArgumentError, "com MUST have thread IDs specified" unless ARGV.length > 0
 		end
-		Hermaeus.seek type, ARGV do |post|
-			puts post[:title]
+		arc = Hermaeus::Archivist.new
+		Hermaeus.seek(type, ARGV) do |post|
+			apoc = Hermaeus::Apocryphon.new post
+			puts apoc
+			arc.save_to_file apoc
 		end
 	end
 else

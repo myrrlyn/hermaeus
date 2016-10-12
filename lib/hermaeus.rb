@@ -1,7 +1,11 @@
+require "hermaeus/apocryphon"
+require "hermaeus/archivist"
 require "hermaeus/client"
 require "hermaeus/config"
 require "hermaeus/error"
 require "hermaeus/version"
+
+require "fileutils"
 
 # Public: Root module for Hermaeus.
 #
