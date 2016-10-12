@@ -1,3 +1,5 @@
+require "hermaeus/apocryphon"
+require "hermaeus/archivist"
 require "hermaeus/client"
 require "hermaeus/config"
 require "hermaeus/error"
