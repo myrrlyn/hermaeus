@@ -28,6 +28,7 @@ and then downloading the source material those lists reference.
 	spec.add_development_dependency "rake", "~> 10.0"
 	spec.add_development_dependency "pry"
 
+	spec.add_dependency "htmlentities", "~> 4.3"
 	spec.add_dependency "nokogiri", "~> 1.6"
 	spec.add_dependency "redd", "~> 0.7"
 	spec.add_dependency "tomlrb"

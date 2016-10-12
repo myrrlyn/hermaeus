@@ -1,0 +1,13 @@
+`mora` uses subcommands for its operation.
+
+- 'help' (also '-h' and '--help' to fit expectations) displays this message.
+
+- 'version' (also '-v' and '--version') prints the version string.
+
+- 'seek' accesses reddit to download Apocrypha posts. It takes an argument to
+determine whether to target the global wiki list or a Community Thread:
+
+    - 'seek index' accesses the /r/teslore/wiki/compilation page
+
+    - 'seek com $ID' accesses a Community Thread. This requires one or more post
+        IDs to scan.
