@@ -1,3 +1,5 @@
+[![Gem Version](https://badge.fury.io/rb/hermaeus.svg)](https://badge.fury.io/rb/hermaeus)
+
 # Hermaeus
 
 Hermaeus Mora, the Daedric Prince of Fate and Knowledge, hoards information in
@@ -31,6 +33,16 @@ Or install it yourself as:
 
 `Hermaeus` can be used in other Ruby scripts via top-level methods, or via the
 `mora` executable.
+
+On first run, `mora` will deliberately crash and complain that the config file
+is missing. It will create a sample configuration file for you to edit, at
+`$HOME/.hermaeus/config.toml`.
+
+This file needs to be populated with reddit credentials so Hermaeus can log in.
+The `[client]` section of this file has five keys, each of which have comments
+explaining what they should hold. `mora` will crash with somewhat helpful (I
+hope) error messages if any of these fields are missing, as well. Once you have
+filled in the configuration file with correct values, `mora` will run properly.
 
 ## Development
 
