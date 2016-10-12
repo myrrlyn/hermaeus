@@ -22,7 +22,7 @@ module Hermaeus
 			Config.validate @cfg
 		else
 			File.open Config::FILE, "w+" do |file|
-				File.open File.expand_path Config::SOURCE, "r", "0600" do |cfg|
+				File.open File.expand_path(Config::SOURCE), "r", "0600" do |cfg|
 					file << cfg.read
 				end
 			end
