@@ -2,6 +2,11 @@
 
 ## v1
 
+### v1.0.2
+
+Fix a File.open call; it was accidentally being given a string permission set
+instead of numeric.
+
 ### v1.0.1
 
 Deployment to a separate machine brought some hidden bugs to light. Fixed a
