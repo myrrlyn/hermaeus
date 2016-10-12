@@ -5,6 +5,8 @@ require "hermaeus/config"
 require "hermaeus/error"
 require "hermaeus/version"
 
+require "fileutils"
+
 # Public: Root module for Hermaeus.
 #
 # Hermaeus’ top-level methods provide the interface used by `mora`.

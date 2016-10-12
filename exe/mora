@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-require "bundler/setup"
 require "hermaeus"
 
 if ARGV.length == 0 || ARGV[0].match(/^-{0,2}help$/) || ARGV[0] == "-h"
@@ -20,7 +19,9 @@ elsif ARGV[0] == "seek"
 		end
 		arc = Hermaeus::Archivist.new
 		Hermaeus.seek(type, ARGV) do |post|
-			arc.save_to_file Hermaeus::Apocryphon.new post
+			apoc = Hermaeus::Apocryphon.new post
+			puts apoc
+			arc.save_to_file apoc
 		end
 	end
 else
