@@ -4,6 +4,8 @@
 	redd
 ].each(&method(:require))
 
+include Enumerable
+
 require "hermaeus/config"
 require "hermaeus/version"
 
@@ -13,13 +15,10 @@ module Hermaeus
 	class Client
 		USER_AGENT = "Redd/Ruby:Hermaeus:#{Hermaeus::VERSION} (by /u/myrrlyn)"
 		# Public: Connects the Hermaeus::Client to reddit.
-		#
-		# info - A Hash with Symbol keys containing reddit connection information.
-		# It should be the `[:client]` section of the Hash returned by
-		# `Hermaeus::Config.load`.
-		def initialize client
-			Config.validate client: client
-			@client = Redd.it(client.delete(:type).to_sym, *client.values, user_agent: USER_AGENT)
+		def initialize
+			Config.validate!
+			cfg = Config.info[:client]
+			@client = Redd.it(cfg.delete(:type).to_sym, *cfg.values, user_agent: USER_AGENT)
 			@client.authorize!
 			@html_filter = HTMLEntities.new
 		end
@@ -28,7 +27,7 @@ module Hermaeus
 		#
 		# Wraps Client#scrape_index; see it for documentation.
 		def get_global_listing **opts
-			scrape_index "/r/teslore/wiki/compilation", opts
+			scrape_index Config.info[:index][:path], opts
 		end
 
 		# Public: Scrapes a Weekly Community Thread patch index.
@@ -46,6 +45,8 @@ module Hermaeus
 			ids.map! do |id|
 			 "t3_#{id}" unless id.match /^t3_/
 			end
+			# TODO: Ensure that this is safe (only query <= 100 IDs at a time), and
+			# call the scraper multiple times and reassemble output if necessary.
 			query = "/by_id/#{ids.join(",")}"
 			scrape_index query, opts
 		end
@@ -62,6 +63,7 @@ module Hermaeus
 		# Returns a String Array containing the reddit fullnames harvested from the
 		# input list. Input elements that do not match are stripped.
 		def get_fullnames data, **opts
+			# TODO: Move this regex to the configuration file.
 			regex = opts[:regex] || %r(/r/.+/(comments/)?(?<id>[0-9a-z]+)/.+)
 			data.map do |item|
 				m = item.match regex
@@ -89,25 +91,11 @@ module Hermaeus
 			ret = []
 			# reddit has finite limits on acceptable query sizes. Split the list into
 			# manageable portions
-			fullnames.fracture.each do |chunk|
+			fullnames.each_slice(100).each do |chunk|
 				# Assemble the list of reddit objects being queried
-				query = chunk.join(",")
-				# Ask reddit to procure our items
-				response = @client.get("/by_id/#{query}.json")
-				if response.success?
-					payload = response.body
-					# The payload should be a Listing even for a single-item query; the
-					# :children array will just have one element.
-					if payload[:kind] == "Listing"
-						payload[:data][:children].each do |item|
-							yield item[:data]
-						end
-					# else
-					end
-					ret << payload
-				end
-				# Keep the rate limiter happy
-				sleep 1
+				query = "/by_id/#{chunk.join(",")}.json"
+				response = scrape_posts query, &block
+				ret << response.body
 			end
 			ret
 		end
@@ -175,40 +163,40 @@ module Hermaeus
 			end
 			.flatten
 		end
-	end
-end
 
-class Array
-	# Public: Splits an Array into several arrays, each of which has a maximum
-	# size.
-	#
-	# size - The maximum length of each segment. Defaults to 100.
-	#
-	# Returns an Array of Arrays. Each element of the returned array is a section
-	# of the original array.
-	#
-	# Examples
-	#
-	# %w[a b c d e f g h i j k l m n o p q r s t u v w x y z].fracture 5
-	# => [
-	#   ["a", "b", "c", "d", "e"],
-	#   ["f", "g", "h", "i", "j"],
-	#   ["k", "l", "m", "n", "o"],
-	#   ["p", "q", "r", "s", "t"],
-	#   ["u", "v", "w", "x", "y"],
-	#   ["z"]
-	# ]
-	# %w[hello world].fracture 5 => [["hello", "world"]]
-	def fracture size = 100
-		if self.length < size
-			[self]
-		else
-			ret = []
-			self.each_with_index do |val, idx|
-				ret[idx / size] ||= []
-				ret[idx / size] << val
+		# Internal: Provides the actual functionality for collecting posts.
+		#
+		# query - The reddit API endpoint or path being queried.
+		# opts - Options for the reddit API call
+		# block - This method yields each post fetched to its block.
+		# tries - hidden parameter used to prevent infinite stalling on rate limits.
+		#
+		# Returns reddit's response to the query.
+		def scrape_posts query, tries = 0, **opts, &block
+			begin
+				# Ask reddit to procure our items
+				response = @client.get(query, opts)
+				if response.success?
+					payload = response.body
+					# The payload should be a Listing even for a single-item query; the
+					# :children array will just have one element.
+					if payload[:kind] == "Listing"
+						payload[:data][:children].each do |item|
+							yield item[:data]
+						end
+					end
+					return response
+				end
+			# If at first you don't succeed...
+			rescue Redd::Error::RateLimited => e
+				sleep e.time + 1
+				# Try try again.
+				if tries < 3
+					scrape_posts query, tries + 1
+				else
+					raise RuntimeError, "reddit rate limit will not unlock"
+				end
 			end
-			ret
 		end
 	end
 end

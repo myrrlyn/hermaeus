@@ -18,8 +18,17 @@ module Hermaeus
 	def self.init
 		FileUtils.mkdir_p(Config::DIR)
 		if File.exist? Config::FILE
-			@cfg = Config.load
-			Config.validate @cfg
+			Config.load
+			begin
+				Config.validate!
+			rescue ConfigurationError => e
+				puts <<-EOS
+#{e.message}
+
+Edit your configuration file (#{File.join Config::DIR, "config.toml"}) to \
+continue.
+				EOS
+			end
 		else
 			File.open Config::FILE, "w+" do |file|
 				File.open File.expand_path(Config::SOURCE), "r", 0600 do |cfg|
@@ -35,7 +44,7 @@ for Hermaeus to function.
 
 	# Public: Connects Hermaeus to reddit.
 	def self.connect
-		@client = Client.new @cfg[:client]
+		@client = Client.new
 	end
 
 	# Public: Downloads Apocrypha posts.
