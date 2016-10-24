@@ -45,6 +45,8 @@ module Hermaeus
 			ids.map! do |id|
 			 "t3_#{id}" unless id.match /^t3_/
 			end
+			# TODO: Ensure that this is safe (only query <= 100 IDs at a time), and
+			# call the scraper multiple times and reassemble output if necessary.
 			query = "/by_id/#{ids.join(",")}"
 			scrape_index query, opts
 		end
@@ -61,6 +63,7 @@ module Hermaeus
 		# Returns a String Array containing the reddit fullnames harvested from the
 		# input list. Input elements that do not match are stripped.
 		def get_fullnames data, **opts
+			# TODO: Move this regex to the configuration file.
 			regex = opts[:regex] || %r(/r/.+/(comments/)?(?<id>[0-9a-z]+)/.+)
 			data.map do |item|
 				m = item.match regex
