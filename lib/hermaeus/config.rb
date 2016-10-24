@@ -35,11 +35,12 @@ module Hermaeus
 		# Raises a ConfigurationError if the configuration is invalid, with an
 		# error message describing the failure.
 		def self.validate!
-			unless @info.has_key? :client
-				raise ConfigurationError.new <<-EOS
+			# Validate the [client] section.
+			raise ConfigurationError.new(<<-EOS) unless @info.has_key? :client
 Hermaeus’ configuration file must contain a [client] section.
-				EOS
-			end
+			EOS
+
+			# Validate the [client] section’s type field.
 			unless @info[:client].has_key?(:type) && ALLOWED_TYPES.include?(@info[:client][:type])
 				raise ConfigurationError.new <<-EOS
 Hermaeus’ [client] section must include a type key whose value is one of:
@@ -49,6 +50,8 @@ Hermaeus’ [client] section must include a type key whose value is one of:
 type = "one of the listed types"
 				EOS
 			end
+
+			# Validate the [client] section’s id and secret fields.
 			unless @info[:client].has_key?(:id) && @info[:client].has_key?(:secret)
 				raise ConfigurationError.new <<-EOS
 Hermaeus’ [client] section must include keys for the ID and secret provided by
@@ -59,6 +62,8 @@ id = "an ID from reddit"
 secret = "a secret from reddit"
 				EOS
 			end
+
+			# Validate the [client] section’s username and password fields, if needed.
 			if @info[:client][:type] == "script"
 				client = @info[:client]
 				unless client.has_key?(:username) && client.has_key?(:password)
@@ -72,9 +77,36 @@ password = "hunter2"
 					EOS
 				end
 			end
-		@info[:archive] ||= { path: "archive" }
-		@info[:index] ||= { path: "/r/teslore/wiki/archive" }
-		true
+
+			# Validate the [archive] section.
+			raise ConfigurationError.new(<<-EOS) unless @info.has_key? :archive
+Hermaeus’ configuration file must include an [archive] section to govern the
+storage of downloaded posts.
+			EOS
+
+			raise ConfigurationError.new(<<-EOS) unless @info[:archive].has_key? :path
+Hermaeus’ [archive] section must include a path field containing a relative or
+absolute path in which to store the downloaded posts.
+
+[archive]
+path = "./archive"
+# path = "/tmp/teslore/archive"
+			EOS
+
+			# Validate the [index] section.
+			raise ConfigurationError.new(<<-EOS) unless @info.has_key? :index
+Hermaeus’ configuration file must include and [index] section to govern the
+processing of the subreddit’s index page.
+			EOS
+
+			raise ConfigurationError.new(<<-EOS) unless @info[:index].has_key? :path
+Hermaeus’ [index] section must include a path field containing the reddit page
+at which the index resides.
+
+[index]
+path = "/r/teslore/wiki/archive"
+			EOS
+			true
 		end
 	end
 end

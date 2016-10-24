@@ -19,7 +19,16 @@ module Hermaeus
 		FileUtils.mkdir_p(Config::DIR)
 		if File.exist? Config::FILE
 			Config.load
-			Config.validate!
+			begin
+				Config.validate!
+			rescue ConfigurationError => e
+				puts <<-EOS
+#{e.message}
+
+Edit your configuration file (#{File.join Config::DIR, "config.toml"}) to \
+continue.
+				EOS
+			end
 		else
 			File.open Config::FILE, "w+" do |file|
 				File.open File.expand_path(Config::SOURCE), "r", 0600 do |cfg|
