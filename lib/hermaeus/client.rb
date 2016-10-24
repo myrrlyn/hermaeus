@@ -18,7 +18,7 @@ module Hermaeus
 		# It should be the `[:client]` section of the Hash returned by
 		# `Hermaeus::Config.load`.
 		def initialize client
-			Config.validate client: client
+			Config.validate!
 			@client = Redd.it(client.delete(:type).to_sym, *client.values, user_agent: USER_AGENT)
 			@client.authorize!
 			@html_filter = HTMLEntities.new
@@ -28,7 +28,7 @@ module Hermaeus
 		#
 		# Wraps Client#scrape_index; see it for documentation.
 		def get_global_listing **opts
-			scrape_index "/r/teslore/wiki/compilation", opts
+			scrape_index Config.info[:index][:path], opts
 		end
 
 		# Public: Scrapes a Weekly Community Thread patch index.

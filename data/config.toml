@@ -16,3 +16,7 @@ password = "hunter2"
 [archive]
 # The path where Hermaeus dumps output files.
 path = "archive"
+
+# Settings for the /r/teslore index page
+[index]
+path = "/r/teslore/wiki/archive"
