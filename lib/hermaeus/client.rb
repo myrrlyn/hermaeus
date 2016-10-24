@@ -4,6 +4,8 @@
 	redd
 ].each(&method(:require))
 
+include Enumerable
+
 require "hermaeus/config"
 require "hermaeus/version"
 
@@ -89,7 +91,7 @@ module Hermaeus
 			ret = []
 			# reddit has finite limits on acceptable query sizes. Split the list into
 			# manageable portions
-			fullnames.fracture.each do |chunk|
+			fullnames.each_slice(100).each do |chunk|
 				# Assemble the list of reddit objects being queried
 				query = chunk.join(",")
 				# Ask reddit to procure our items
@@ -174,41 +176,6 @@ module Hermaeus
 				end
 			end
 			.flatten
-		end
-	end
-end
-
-class Array
-	# Public: Splits an Array into several arrays, each of which has a maximum
-	# size.
-	#
-	# size - The maximum length of each segment. Defaults to 100.
-	#
-	# Returns an Array of Arrays. Each element of the returned array is a section
-	# of the original array.
-	#
-	# Examples
-	#
-	# %w[a b c d e f g h i j k l m n o p q r s t u v w x y z].fracture 5
-	# => [
-	#   ["a", "b", "c", "d", "e"],
-	#   ["f", "g", "h", "i", "j"],
-	#   ["k", "l", "m", "n", "o"],
-	#   ["p", "q", "r", "s", "t"],
-	#   ["u", "v", "w", "x", "y"],
-	#   ["z"]
-	# ]
-	# %w[hello world].fracture 5 => [["hello", "world"]]
-	def fracture size = 100
-		if self.length < size
-			[self]
-		else
-			ret = []
-			self.each_with_index do |val, idx|
-				ret[idx / size] ||= []
-				ret[idx / size] << val
-			end
-			ret
 		end
 	end
 end
