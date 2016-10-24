@@ -35,7 +35,7 @@ for Hermaeus to function.
 
 	# Public: Connects Hermaeus to reddit.
 	def self.connect
-		@client = Client.new Config.info[:client]
+		@client = Client.new
 	end
 
 	# Public: Downloads Apocrypha posts.

@@ -15,13 +15,10 @@ module Hermaeus
 	class Client
 		USER_AGENT = "Redd/Ruby:Hermaeus:#{Hermaeus::VERSION} (by /u/myrrlyn)"
 		# Public: Connects the Hermaeus::Client to reddit.
-		#
-		# info - A Hash with Symbol keys containing reddit connection information.
-		# It should be the `[:client]` section of the Hash returned by
-		# `Hermaeus::Config.load`.
-		def initialize client
+		def initialize
 			Config.validate!
-			@client = Redd.it(client.delete(:type).to_sym, *client.values, user_agent: USER_AGENT)
+			cfg = Config.info[:client]
+			@client = Redd.it(cfg.delete(:type).to_sym, *cfg.values, user_agent: USER_AGENT)
 			@client.authorize!
 			@html_filter = HTMLEntities.new
 		end
