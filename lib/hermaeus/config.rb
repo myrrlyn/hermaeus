@@ -64,6 +64,8 @@ to function.
 		# Raises a ConfigurationError if the configuration is invalid, with an
 		# error message describing the failure.
 		def self.validate!
+			fail! "The configuration has not been loaded." unless @info
+
 			# Compare values against the example file, to see if they have been set.
 			demo = Tomlrb.load_file SOURCE, symbolize_keys: true
 
@@ -125,7 +127,9 @@ storage of downloaded posts.
 				EOS
 			end
 
-			unless @info[:archive].has_key? :path
+			archive = @info[:archive]
+
+			unless archive.has_key? :path
 				fail! <<-EOS
 Hermaeus’ [archive] section must include a path field containing a relative or
 absolute path in which to store the downloaded posts.
@@ -133,6 +137,20 @@ absolute path in which to store the downloaded posts.
 [archive]
 path = "./archive"
 # path = "/tmp/teslore/archive"
+				EOS
+			end
+
+			unless archive.has_key?(:title_fmt) && archive.has_key?(:title_args)
+				fail! <<-EOS
+Hermaeus’ [archive] section must include fields for title format and arguments.
+These fields consist of a format string and an array of attributes found on
+posts. There must be as many arguments as there are format tokens.
+
+[archive]
+title_fmt = "%s-%s-%s"
+title_args = ["id", "title", "author"]
+
+This example saves posts as "zfxy9-Jel Language-lu_ming".
 				EOS
 			end
 

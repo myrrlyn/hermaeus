@@ -25,9 +25,14 @@ reddit: #{apoc.id}
 
 		def save_to_file apoc
 			unless apoc.text == "[deleted]" || apoc.text == "[removed]"
-				title = @html_filter.decode(title)
-				title = apoc.title.downcase.gsub(/[ \/]/, "_").gsub(/[:"',]/, "")
+				fmt = @config[:title_fmt] % @config[:title_args].map do |item|
+					apoc.send(item.to_sym)
+				end
+				title = @html_filter.decode(fmt)
+				title.gsub!(/[\/&]/, "_")
+				title.gsub!(/[:"',\[\]]/, "")
 				title << ".html.md"
+
 				File.open(File.join(@config[:path], title), "w+") do |file|
 					file << add_metadata(apoc)
 					file << prettify(apoc.text)
