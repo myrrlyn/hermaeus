@@ -17,3 +17,6 @@ path = "archive"
 # Settings for the /r/teslore index page
 [index]
 path = "/r/teslore/wiki/archive"
+# This is a magic string that targets the index format /r/teslore uses to
+# enumerate their Compendium, in the wiki page and weekly patch posts.
+css = "td:first-child a"

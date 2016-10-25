@@ -48,7 +48,7 @@ module Hermaeus
 			# TODO: Ensure that this is safe (only query <= 100 IDs at a time), and
 			# call the scraper multiple times and reassemble output if necessary.
 			query = "/by_id/#{ids.join(",")}"
-			scrape_index query, opts
+			scrape_index query, opts.merge({ css: Config.info.dig(:index, :css)})
 		end
 
 		# Public: Transforms a list of raw reddit links ("/r/SUB/comments/ID/NAME")
@@ -114,9 +114,6 @@ module Hermaeus
 		# Returns an array of all the referenced links. These links will need to be
 		# broken down into reddit fullnames before Hermaeus can download them.
 		def scrape_index path, **opts
-			# This is a magic string that targets the index format /r/teslore uses to
-			# enumerate their Compendium, in the wiki page and weekly patch posts.
-			query = opts[:css] || "td:first-child a"
 			# Reddit will respond with an HTML dump, if we are querying a wiki page,
 			# or a wrapped HTML dump, if we are querying a post.
 			fetch = @client.get(path).body
@@ -157,7 +154,7 @@ module Hermaeus
 				Nokogiri::HTML(item)
 			end
 			.map do |item|
-				item.css(query).map do |item|
+				item.css(opts[:css]).map do |item|
 					item.attributes["href"].value
 				end
 			end
