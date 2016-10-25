@@ -14,6 +14,20 @@ module Hermaeus
 		# Configuration template in Hermaeus’ source code
 		SOURCE = File.join File.dirname(__FILE__), "..", "..", "data", "config.toml"
 
+		# Since Archivist supports dynamic method calling from the config file, the
+		# config file needs safety checks.
+		ALLOWED_TITLE_ARGS = %w[
+			author
+			created
+			created_utc
+			edited
+			id
+			name
+			score
+			subreddit
+			title
+		]
+
 		def self.init
 			FileUtils.mkdir_p DIR
 			load
@@ -38,6 +52,8 @@ module Hermaeus
 				File.open FILE, "r+" do |file|
 					@info = Tomlrb.parse file.read, symbolize_keys: true
 				end
+			# The configuration file may not exist, in which case the sample file gets
+			# written to the expected location and then Hermaeus crashes.
 			rescue Errno::ENOENT
 				File.open FILE, "w+", 0600 do |file|
 					File.open File.expand_path(SOURCE), "r" do |cfg|
@@ -67,9 +83,28 @@ to function.
 			fail! "The configuration has not been loaded." unless @info
 
 			# Compare values against the example file, to see if they have been set.
-			demo = Tomlrb.load_file SOURCE, symbolize_keys: true
+			#
+			# Hermaeus cannot function with the default values, so ensuring that the
+			# file has been actually filled in, rather than just copied into place, is
+			# important.
+			@example = Tomlrb.load_file SOURCE, symbolize_keys: true
 
 			# Validate the [client] section.
+			validate_client!
+
+			# Validate the [archive] section.
+			validate_archive!
+
+			# Validate the [index] section.
+			validate_index!
+
+			nil
+		end
+
+		private
+
+		# Internal: Validates the [client] section of a config file.
+		def self.validate_client!
 			unless @info.has_key? :client
 				fail! <<-EOS
 Hermaeus’ configuration file must contain a [client] section.
@@ -81,8 +116,10 @@ Hermaeus’ configuration file must contain a [client] section.
 			# Validate the [client] section’s id and secret fields.
 			unless client.has_key?(:id) && client.has_key?(:secret)
 				fail! <<-EOS
-Hermaeus’ [client] section must include keys for the ID and secret provided by
+Hermaeus’ [client] section must include fields for the ID and secret provided by
 reddit for your application.
+
+Example:
 
 [client]
 id = "an ID from reddit"
@@ -90,11 +127,13 @@ secret = "a secret from reddit"
 				EOS
 			end
 
-			if client[:id]     == demo[:client][:id] \
-			|| client[:secret] == demo[:client][:secret]
+			if client[:id]     == @example[:client][:id] \
+			|| client[:secret] == @example[:client][:secret]
 				fail! <<-EOS
 You need to register an application with reddit to receive an ID and secret, and
 paste these values into the configuration file for Hermaeus to use.
+
+Example:
 
 [client]
 id = "the ID reddit gave you for your application"
@@ -106,11 +145,14 @@ secret = "the secret reddit gave you for your application"
 			if client[:type] == "script"
 				if !client.has_key?(:username) \
 				|| !client.has_key?(:password) \
-				|| client[:username] == demo[:client][:username] \
-				|| client[:password] == demo[:client][:password]
+				|| client[:password] == @example[:client][:password]
 					fail! <<-EOS
 Hermaeus’ [client] section must include information for the reddit account
 username and password as which it will work.
+
+If your password is actually hunter2, change your password.
+
+Example:
 
 [client]
 username = "a_reddit_username"
@@ -118,8 +160,10 @@ password = "hunter2"
 					EOS
 				end
 			end
+		end
 
-			# Validate the [archive] section.
+		# Internal: Validates the [archive] section of a config file.
+		def self.validate_archive!
 			unless @info.has_key? :archive
 				fail! <<-EOS
 Hermaeus’ configuration file must include an [archive] section to govern the
@@ -134,9 +178,15 @@ storage of downloaded posts.
 Hermaeus’ [archive] section must include a path field containing a relative or
 absolute path in which to store the downloaded posts.
 
+Suggested default:
+
 [archive]
-path = "./archive"
-# path = "/tmp/teslore/archive"
+path = "archive" # relative to the directory in which Hermaeus or mora is run
+
+Example:
+
+[archive]
+path = "/tmp/teslore/archive" # absolute path
 				EOS
 			end
 
@@ -146,15 +196,48 @@ Hermaeus’ [archive] section must include fields for title format and arguments
 These fields consist of a format string and an array of attributes found on
 posts. There must be as many arguments as there are format tokens.
 
+Suggested default:
+
+title_fmt = "%s"
+title_args = ["title"]
+
+Example:
+
 [archive]
-title_fmt = "%s-%s-%s"
+title_fmt = "%s - %s - %s"
 title_args = ["id", "title", "author"]
 
-This example saves posts as "zfxy9-Jel Language-lu_ming".
+This example saves posts as "zfxy9 - Jel Language - lu_ming".
 				EOS
 			end
 
-			# Validate the [index] section.
+			# Ensure that there are as many % tokens as there are arguments.
+			# TODO: Skip %% tokens (which should never show up anyway in a filename).
+			unless archive[:title_fmt].count("%") == archive[:title_args].length
+				fail! <<-EOS
+The number of %s tokens in title_fmt must be exactly equal to the number of
+items in title_args.
+				EOS
+			end
+
+			# Safety check on the title args: Whitelist only names known to map to
+			# useful data on an Apocryphon object, and forbid everything else. This
+			# feature exposes an attack surface, as the title_arg strings are called
+			# as method names during Archivist processing.
+			archive[:title_args].each do |arg|
+				unless ALLOWED_TITLE_ARGS.include? arg
+					fail! <<-EOS
+The title_arg entry "#{arg}" is not permitted. Only the following items are
+allowed as title_arg entries:
+
+#{ALLOWED_TITLE_ARGS.join(", ")}.
+					EOS
+				end
+			end
+		end
+
+		# Internal: Validates the [index] section of a config file.
+		def self.validate_index!
 			unless @info.has_key? :index
 				fail! <<-EOS
 Hermaeus’ configuration file must include an [index] section to govern the
@@ -162,30 +245,45 @@ processing of the subreddit’s index page.
 				EOS
 			end
 
-			unless @info[:index].has_key? :path
+			idx = @info[:index]
+
+			unless idx.has_key? :path
 				fail! <<-EOS
 Hermaeus’ [index] section must include a path field containing the reddit page
 at which the index resides.
+
+Example:
 
 [index]
 path = "/r/teslore/wiki/archive"
 				EOS
 			end
-			nil
-		end
 
-		private
+			unless idx.has_key? :css
+				fail! <<-EOS
+The [index] section needs a css field containing the CSS selector used to access
+the appropriate links on the index page. Finding an appropriate CSS selector may
+take some experimentation.
+
+Example:
+
+[index]
+css = "td:first-child a"
+				EOS
+			end
+		end
 
 		# Internal: Logs a fatal message and throws an exception.
 		#
-		# msg - A String describing the error that occurred.
+		# msg - A String describing the error that occurred. May be nil.
 		#
 		# Raises a ConfigurationError with the given message.
-		def self.fail! msg
-			Hermaeus.log.fatal <<-EOS
+		def self.fail! msg = nil
+			default_msg = <<-EOS
 Your configuration file (#{FILE}) is invalid, and must be edited to continue.
 			EOS
-			raise ConfigurationError.new msg
+			Hermaeus.log.fatal default_msg
+			raise ConfigurationError.new(msg || default_msg)
 		end
 	end
 end

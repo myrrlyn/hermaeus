@@ -48,6 +48,32 @@ with correct values, Hermaeus will function properly.
 Hermaeus’ configuration files can be specified using the environment variables
 `HERMAEUS_DIR` and `HERMAEUS_FILE`.
 
+### Configuration
+
+The configuration file allows for some complex behavior. The `[archive]` section
+permits relative or absolute paths in the `path` key, setting where Hermaeus
+writes files to disk. The `title_fmt` and `title_args` fields set up a format
+string for the filenames of the saved posts; the `title_fmt` field consists of
+`%s` tokens in the desired layout, and the `title_args` field is an array of
+metadata names. Since the strings in `title_args` are called as method names,
+this field is whitelisted to limit the attack surface. The permitted items are:
+
+- author
+- created
+- created_utc
+- edited
+- id
+- name
+- score
+- subreddit
+- title
+
+The "created{,_utc}" and "edited" methods return Unix timestamps, which allow
+for proper sorting on disk but are not otherwise useful in filenames.
+
+The "score" method returns an integer, so it can be used with a `%i` token as
+well as the generic `%s`.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. You can

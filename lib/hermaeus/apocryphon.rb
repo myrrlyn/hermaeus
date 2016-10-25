@@ -27,7 +27,7 @@ module Hermaeus
 
 		# Public: Accessor for the Apocryphon's HTML as compiled by reddit.
 		def html
-			data[:selftext_html]
+			@data[:selftext_html]
 		end
 	end
 end
