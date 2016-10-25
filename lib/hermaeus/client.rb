@@ -18,7 +18,7 @@ module Hermaeus
 		def initialize
 			Config.validate!
 			cfg = Config.info[:client]
-			@client = Redd.it(cfg.delete(:type).to_sym, *cfg.values, user_agent: USER_AGENT)
+			@client = Redd.it(:script, *cfg.values, user_agent: USER_AGENT)
 			@client.authorize!
 			@html_filter = HTMLEntities.new
 		end

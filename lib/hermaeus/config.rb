@@ -21,9 +21,9 @@ module Hermaeus
 			@info
 		end
 
-		# Public: Load a configuration file into memory
+		# Public: Load a configuration file into memory.
 		#
-		# Returns the configuration file represented as a Hash with Symbol keys
+		# Returns the configuration file represented as a Hash with Symbol keys.
 		def self.load
 			@info = Tomlrb.load_file FILE, symbolize_keys: true
 		end
@@ -39,15 +39,6 @@ module Hermaeus
 			raise ConfigurationError.new(<<-EOS) unless @info.has_key? :client
 Hermaeus’ configuration file must contain a [client] section.
 			EOS
-
-			# Validate the [client] section’s type field.
-			unless @info[:client].has_key?(:type) && ALLOWED_TYPES.include?(@info[:client][:type])
-				raise ConfigurationError.new <<-EOS
-Hermaeus’ [client] section must include a type key whose value is one of:
-#{ALLOWED_TYPES.join(", ")}.
-
-[client]
-type = "one of the listed types"
 				EOS
 			end
 
@@ -63,13 +54,7 @@ secret = "a secret from reddit"
 				EOS
 			end
 
-			# Validate the [client] section’s username and password fields, if needed.
-			if @info[:client][:type] == "script"
-				client = @info[:client]
-				unless client.has_key?(:username) && client.has_key?(:password)
-					raise ConfigurationError.new <<-EOS
-When configured for `type = "script"`, Hermaeus’ [client] section must include
-keys for the reddit account username and password as which it will work.
+			# Validate the [client] section’s username and password fields.
 
 [client]
 username = "a_reddit_username"

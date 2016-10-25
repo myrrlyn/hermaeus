@@ -1,13 +1,10 @@
 # Information for Hermaeus' reddit client
 [client]
-# Setting this to "script" lets Hermaeus access reddit as a regular user. Which
-# user, is set belowl
-type     = "script"
 # Creating a reddit API client yields two strings. The shorter is the ID, the
 # longer is a secret. Hermaeus needs both to connect.
 id       = "a string from reddit"
 secret   = "a longer string from reddit"
-# If acting as a user, Hermaeus also needs to identify which user that is. The
+# When acting as a user, Hermaeus also needs to identify which user that is. The
 # reddit username and password go here.
 username = "Librarian_Robot"
 password = "hunter2"
