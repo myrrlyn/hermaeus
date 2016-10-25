@@ -102,8 +102,8 @@ secret = "the secret reddit gave you for your application"
 
 			# Validate the [client] section’s username and password fields.
 			if client[:type] == "script"
-				if !client.has_key? :username \
-				|| !client.has_key? :password \
+				if !client.has_key?(:username) \
+				|| !client.has_key?(:password) \
 				|| client[:username] == demo[:client][:username] \
 				|| client[:password] == demo[:client][:password]
 					fail! <<-EOS
