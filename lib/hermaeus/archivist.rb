@@ -2,17 +2,20 @@ require "hermaeus/config"
 
 module Hermaeus
 	class Archivist
+		# Public: Initializes the Archivist.
 		def initialize
+			Hermaeus.log.info "Initializing the Archivist..."
 			@html_filter = HTMLEntities.new
-			@config = Config.load[:archive]
+			Config.validate!
+			@config = Config.info[:archive]
 			FileUtils.mkdir_p @config[:path]
 		end
 
 		def add_metadata apoc
-			str = <<-EOS
+			<<-EOS
 ---
 author: #{apoc.author}
-title: #{apoc.title}
+title: #{@html_filter.decode(apoc.title)}
 date: #{Time.at(apoc.created.to_i).iso8601}
 reddit: #{apoc.id}
 ---
@@ -34,24 +37,25 @@ reddit: #{apoc.id}
 
 		def prettify text, length: 80
 			@html_filter.decode(text)
-			.split("\n").map do |line|
+			.split("\n")
+			.map do |line|
 				# Put the newline back in
 				line << "\n"
-				break_line line
+				break_line line, length
 			end
 			.join
 		end
 
 		private
 
-		def break_line line, length: 80
+		def break_line line, length
 			if line.length > length + 1
 				left, right = line[0...length], line[length...line.length]
 				cut = left.rindex " "
 				if cut
 					left, right = line[0...cut] << "\n", line[(cut + 1)...line.length]
 				end
-				right = break_line right, length: length
+				right = break_line right, length
 				line = left.concat right
 			end
 			line
