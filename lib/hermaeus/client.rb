@@ -26,8 +26,8 @@ module Hermaeus
 		# Public: Scrapes the Compilation full index.
 		#
 		# Wraps Client#scrape_index; see it for documentation.
-		def get_global_listing **opts
-			scrape_index Config.info[:index][:path], opts
+		def get_global_listing
+			scrape_index Config.info.dig :index, :path
 		end
 
 		# Public: Scrapes a Weekly Community Thread patch index.
@@ -48,7 +48,7 @@ module Hermaeus
 			# TODO: Ensure that this is safe (only query <= 100 IDs at a time), and
 			# call the scraper multiple times and reassemble output if necessary.
 			query = "/by_id/#{ids.join(",")}"
-			scrape_index query, opts.merge({ css: Config.info.dig(:index, :css)})
+			scrape_index query
 		end
 
 		# Public: Transforms a list of raw reddit links ("/r/SUB/comments/ID/NAME")
@@ -107,13 +107,9 @@ module Hermaeus
 		# path - The reddit API or path being queried. It can be a post ID/fullname
 		# or a full URI.
 		#
-		# Optional parameters:
-		#
-		# css: The CSS selector string used to get the links referenced on the page.
-		#
 		# Returns an array of all the referenced links. These links will need to be
 		# broken down into reddit fullnames before Hermaeus can download them.
-		def scrape_index path, **opts
+		def scrape_index path
 			# Reddit will respond with an HTML dump, if we are querying a wiki page,
 			# or a wrapped HTML dump, if we are querying a post.
 			fetch = @client.get(path).body
@@ -154,7 +150,7 @@ module Hermaeus
 				Nokogiri::HTML(item)
 			end
 			.map do |item|
-				item.css(opts[:css]).map do |item|
+				item.css(Config.info.dig :index, :css).map do |item|
 					item.attributes["href"].value
 				end
 			end
