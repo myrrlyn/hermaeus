@@ -8,7 +8,6 @@
 ].map { |mod| "hermaeus/#{mod}" }
 .each { |mod| require mod }
 
-require "fileutils"
 require "logger"
 
 # Public: Root module for Hermaeus.
@@ -16,36 +15,10 @@ require "logger"
 # Hermaeus’ top-level methods provide the interface used by `mora`.
 module Hermaeus
 	# Public: Initializes Hermaeus for use.
-	#
-	# Raises a ConfigurationError if Hermaeus’ config file does not exist, and
-	# creates a sample configuration file for modification.
 	def self.init
-		FileUtils.mkdir_p(Config::DIR)
-		if File.exist? Config::FILE
-			Config.load
-			begin
-				Config.validate!
-			rescue ConfigurationError => e
-				puts <<-EOS
-#{e.message}
-
-Edit your configuration file (#{File.join Config::DIR, "config.toml"}) to \
-continue.
-				EOS
-			end
-		else
-			File.open Config::FILE, "w+" do |file|
-				File.open File.expand_path(Config::SOURCE), "r", 0600 do |cfg|
-					file << cfg.read
-				end
-			end
-			raise ConfigurationError.new <<-EOS
-You must put your reddit credentials in #{File.join Config::DIR,"config.toml"} \
-for Hermaeus to function.
-			EOS
-		end
 		@log = Logger.new STDERR
 		log.info "Initializing Hermaeus..."
+		Config.init
 	end
 
 	# Public: Connects Hermaeus to reddit.

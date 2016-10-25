@@ -13,7 +13,7 @@ module Hermaeus
 		#
 		# Returns a String representing the error.
 		def to_s
-			@message
+			"\n" + @message
 		end
 	end
 end
