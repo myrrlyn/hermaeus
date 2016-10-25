@@ -20,7 +20,7 @@ elsif ARGV[0] == "seek"
 		arc = Hermaeus::Archivist.new
 		Hermaeus.seek(type, ARGV) do |post|
 			apoc = Hermaeus::Apocryphon.new post
-			puts apoc
+			Hermaeus.log.info apoc.to_s
 			arc.save_to_file apoc
 		end
 	end
