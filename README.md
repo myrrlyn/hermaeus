@@ -39,10 +39,14 @@ is missing. It will create a sample configuration file for you to edit, at
 `$HOME/.hermaeus/config.toml`.
 
 This file needs to be populated with reddit credentials so Hermaeus can log in.
-The `[client]` section of this file has five keys, each of which have comments
-explaining what they should hold. `mora` will crash with somewhat helpful (I
-hope) error messages if any of these fields are missing, as well. Once you have
-filled in the configuration file with correct values, `mora` will run properly.
+The `[client]` section of this file has four keys, each of which have comments
+explaining what they should hold. Hermaeus will crash with helpful (I hope)
+error messages if any of these fields are missing, or if they are duplicates of
+the example configuration file. Once you have filled in the configuration file
+with correct values, Hermaeus will function properly.
+
+Hermaeus’ configuration files can be specified using the environment variables
+`HERMAEUS_DIR` and `HERMAEUS_FILE`.
 
 ## Development
 
